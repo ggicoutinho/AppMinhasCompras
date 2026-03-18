@@ -1,15 +1,15 @@
-﻿using AppMinhasCompras.Helpers;
+﻿using MauiAppMinhasCompras.Helpers;
 
 namespace AppMinhasCompras
 {
     public partial class App : Application
     {
-
         static SQLiteDatabaseHelper _db;
 
         public static SQLiteDatabaseHelper Db
         {
-            get {
+            get
+            {
                 if (_db == null)
                 {
                     string path = Path.Combine(
@@ -27,11 +27,9 @@ namespace AppMinhasCompras
         public App()
         {
             InitializeComponent();
+
+            //MainPage = new AppShell();
             MainPage = new NavigationPage(new Views.ListaProduto());
-
-
         }
-
-        
     }
 }

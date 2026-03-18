@@ -1,57 +1,33 @@
-using System.Collections.ObjectModel;
 using AppMinhasCompras.Models;
+using System.Collections.ObjectModel;
 
 namespace AppMinhasCompras.Views;
 
 public partial class ListaProduto : ContentPage
 {
-
-    public ObservableCollection<Produto> Produtos { get; set; }
-
-    public ObservableCollection<Produto> ProdutosFiltrados { get; set; }
+    ObservableCollection<Produto> lista = new ObservableCollection<Produto>();
 
     public ListaProduto()
     {
         InitializeComponent();
 
-        Produtos = new ObservableCollection<Produto>
-        {
-            new Produto { Descricao="Arroz", Quantidade=1, Preco=25.90 },
-            new Produto { Descricao="Feijão", Quantidade=2, Preco=8.50 },
-            new Produto { Descricao="Macarrão", Quantidade=3, Preco=4.30 },
-            new Produto { Descricao="Café", Quantidade=1, Preco=14.00 },
-            new Produto { Descricao="Leite", Quantidade=5, Preco=6.50 }
-        };
-
-        ProdutosFiltrados = new ObservableCollection<Produto>(Produtos);
-
-        BindingContext = this;
+        lst_produtos.ItemsSource = lista;
     }
 
-    private void SearchBar_TextChanged(object sender, TextChangedEventArgs e)
+    protected async override void OnAppearing()
     {
-        FiltrarProdutos(e.NewTextValue);
-    }
-
-    void FiltrarProdutos(string texto)
-    {
-        if (string.IsNullOrWhiteSpace(texto))
+        try
         {
-            ProdutosFiltrados.Clear();
+            lista.Clear();
 
-            foreach (var produto in Produtos)
-                ProdutosFiltrados.Add(produto);
+            List<Produto> tmp = await App.Db.GetAll();
 
-            return;
+            tmp.ForEach(i => lista.Add(i));
         }
-
-        var resultado = Produtos
-            .Where(p => p.Descricao.ToLower().Contains(texto.ToLower()));
-
-        ProdutosFiltrados.Clear();
-
-        foreach (var produto in resultado)
-            ProdutosFiltrados.Add(produto);
+        catch (Exception ex)
+        {
+            await DisplayAlert("Ops", ex.Message, "OK");
+        }
     }
 
     private void ToolbarItem_Clicked(object sender, EventArgs e)
@@ -59,11 +35,78 @@ public partial class ListaProduto : ContentPage
         try
         {
             Navigation.PushAsync(new Views.NovoProduto());
+
         }
         catch (Exception ex)
         {
-            DisplayAlert("Opa! :(", ex.Message, "OK");
+            DisplayAlert("Ops", ex.Message, "OK");
         }
     }
 
+    private async void txt_search_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        try
+        {
+            string q = e.NewTextValue;
+
+            lista.Clear();
+
+            List<Produto> tmp = await App.Db.Search(q);
+
+            tmp.ForEach(i => lista.Add(i));
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert("Ops", ex.Message, "OK");
+        }
+    }
+
+    private void ToolbarItem_Clicked_1(object sender, EventArgs e)
+    {
+        double soma = lista.Sum(i => i.Total);
+
+        string msg = $"O total ? {soma:C}";
+
+        DisplayAlert("Total dos Produtos", msg, "OK");
+    }
+
+    private async void MenuItem_Clicked(object sender, EventArgs e)
+    {
+        try
+        {
+            MenuItem selecinado = sender as MenuItem;
+
+            Produto p = selecinado.BindingContext as Produto;
+
+            bool confirm = await DisplayAlert(
+                "Tem Certeza?", $"Remover {p.Descricao}?", "Sim", "N?o");
+
+            if (confirm)
+            {
+                await App.Db.Delete(p.Id);
+                lista.Remove(p);
+            }
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert("Ops", ex.Message, "OK");
+        }
+    }
+
+    private void lst_produtos_ItemSelected(object sender, SelectedItemChangedEventArgs e)
+    {
+        try
+        {
+            Produto p = e.SelectedItem as Produto;
+
+            Navigation.PushAsync(new Views.EditarProduto
+            {
+                BindingContext = p,
+            });
+        }
+        catch (Exception ex)
+        {
+            DisplayAlert("Ops", ex.Message, "OK");
+        }
+    }
 }
