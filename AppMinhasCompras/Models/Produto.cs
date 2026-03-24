@@ -23,6 +23,7 @@ namespace AppMinhasCompras.Models
         }
         public double Quantidade { get; set; }
         public double Preco { get; set; }
+        public string Categoria { get; set; } // NOVO CAMPO
         public double Total { get => Quantidade * Preco; }
     }
 }

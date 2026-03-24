@@ -59,6 +59,10 @@ public partial class ListaProduto : ContentPage
         {
             await DisplayAlert("Ops", ex.Message, "OK");
         }
+        finally
+        {
+            lst_produtos.IsRefreshing = true;
+        }
     }
 
     private void ToolbarItem_Clicked_1(object sender, EventArgs e)
@@ -93,20 +97,72 @@ public partial class ListaProduto : ContentPage
         }
     }
 
-    private void lst_produtos_ItemSelected(object sender, SelectedItemChangedEventArgs e)
+
+    private async void lst_produtos_Refreshing(object sender, EventArgs e)
     {
         try
         {
-            Produto p = e.SelectedItem as Produto;
+            lista.Clear();
 
-            Navigation.PushAsync(new Views.EditarProduto
-            {
-                BindingContext = p,
-            });
+            List<Produto> tmp = await App.Db.GetAll();
+
+            tmp.ForEach(i => lista.Add(i));
         }
         catch (Exception ex)
         {
-            DisplayAlert("Ops", ex.Message, "OK");
+            await DisplayAlert("Ops", ex.Message, "OK");
         }
+        finally
+        {
+            lst_produtos.IsRefreshing = false;
+        }
+    }
+
+    private async void lst_produtos_ItemSelected_2(object sender, SelectedItemChangedEventArgs e)
+    {
+        try
+        {
+            lista.Clear();
+
+            List<Produto> tmp = await App.Db.GetAll();
+
+            tmp.ForEach(i => lista.Add(i));
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert("Ops", ex.Message, "OK");
+        }
+    }
+
+    private async void picker_filtro_SelectedIndexChanged(object sender, EventArgs e)
+    {
+        try
+        {
+            string categoria = picker_filtro.SelectedItem.ToString();
+
+            lista.Clear();
+
+            List<Produto> todos = await App.Db.GetAll();
+
+            if (categoria == "Todos")
+            {
+                todos.ForEach(i => lista.Add(i));
+            }
+            else
+            {
+                var filtrados = todos.Where(p => p.Categoria == categoria).ToList();
+
+                filtrados.ForEach(i => lista.Add(i));
+            }
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert("Erro", ex.Message, "OK");
+        }
+    }
+
+    private async void ToolbarItem_Clicked_2(object sender, EventArgs e)
+    {
+        await Navigation.PushAsync(new Relatorio());
     }
 }
